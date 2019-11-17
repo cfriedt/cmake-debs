@@ -1,0 +1,67 @@
+os: linux
+dist: bionic
+addons:
+  apt:
+    packages:
+    - build-essential
+    - git
+#    - autoconf
+#    - automake
+#    - libtool
+#    - pkg-config
+#    - libboost-all-dev
+#    - bison
+#    - flex
+    - curl
+#    - libglib2.0-dev
+    - libssl-dev
+    - dh-make
+    - bzr-builddeb
+#    - libevent-dev
+
+arch:
+  - amd64
+  - arm64
+
+language: cpp
+compiler:
+  - gcc
+
+install: skip
+
+env:
+  - >
+    PN=cmake
+    PV=3.15.2
+    PR=1
+    BIN_PN=cmake
+    BIN_PACKAGE="${BIN_PN}_${PV}-${PR}.${TRAVIS_CPU_ARCH}"
+    PREFIX=usr/local
+
+script:
+  - curl -L -o ${PN}-${PV}.tar.gz "${GH_URL}/releases/download/v${PV}/${PN}-${PV}.tar.gz"
+  - tar xpzf ${PN}-${PV}.tar.gz
+  - cd ${PN}-${PV}
+  - ./bootstrap --parallel=`nproc --all` >/dev/null 2>&1
+  - make -j`nproc --all` >/dev/null 2>&1
+  - make -j`nproc --all` DESTDIR=`pwd`/../${BIN_PACKAGE} install >/dev/null 2>&1
+  - cd ..
+  - sh mkdeb.sh ${BIN_PACKAGE} ${BIN_PN} ${PV} ${PR} "${GH_USER}" ${GH_EMAIL}
+  - mv ${BIN_PACKAGE}.deb ${BIN_PN}_${PV}-${PR}.`dpkg --print-architecture`.deb
+
+notifications:
+  email: false
+
+before_deploy:
+  - git config --local user.name "$GH_USER"
+  - git config --local user.email "$GH_EMAIL"
+  - export TRAVIS_TAG=${PV}
+  - git tag ${TRAVIS_TAG} || true
+
+deploy:
+  - provider: releases
+    api_key: "${GH_TOKEN}"
+    cleanup: false
+    overwrite: true
+    file:
+      - "/*.deb"
