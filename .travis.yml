@@ -35,7 +35,7 @@ env:
     PV=3.15.2
     PR=1
     BIN_PN=cmake
-    BIN_PACKAGE="${BIN_PN}_${PV}-${PR}.${TRAVIS_CPU_ARCH}"
+    BIN_PACKAGE="${BIN_PN}_${PV}-${PR}"
     PREFIX=usr/local
 
 script:
