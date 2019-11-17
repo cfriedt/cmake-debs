@@ -60,7 +60,7 @@ before_deploy:
 
 deploy:
   - provider: releases
-    api_key: "${GH_TOKEN}"
+    api_key: ${GH_TOKEN}
     cleanup: false
     overwrite: true
     file:
