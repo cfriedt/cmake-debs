@@ -4,12 +4,16 @@ ENV PN cmake
 ENV PV 3.15.2
 ENV PR 1
 ENV BIN_PN cmake
-ENV BIN_PACKAGE ${BIN_PN}_${PV}-${PR}
+ENV BIN_PACKAGE ${BIN_PN}_${PV}-${PR}.${TRAVIS_CPU_ARCH}
 ENV PREFIX usr/local
+ENV GH_USER Christopher Friedt
+ENV GH_EMAIL "chrisfriedt@gmail.com"
+ENV GH_URL https://github.com/Kitware/CMake
 
-RUN apt-get update && apt install -y build-essential git autoconf automake libtool pkg-config libboost-all-dev bison flex curl libglib2.0-dev libssl-dev dh-make bzr-builddeb libevent-dev
+#RUN apt-get update && apt install -y build-essential git autoconf automake libtool pkg-config libboost-all-dev bison flex curl libglib2.0-dev libssl-dev dh-make bzr-builddeb libevent-dev
+RUN apt-get update && apt install -y build-essential git curl dh-make bzr-builddeb
 
-RUN curl -L -o ${PN}-${PV}.tar.gz "https://github.com/Kitware/CMake/releases/download/v${PV}/${PN}-${PV}.tar.gz"
+RUN curl -L -o ${PN}-${PV}.tar.gz "${GH_URL}/releases/download/v${PV}/${PN}-${PV}.tar.gz"
 RUN tar xpvzf ${PN}-${PV}.tar.gz
 WORKDIR ${PN}-${PV}
 RUN ./bootstrap --parallel=`nproc --all`
@@ -21,16 +25,4 @@ RUN make -j`nproc --all` install
 
 WORKDIR ../${PN}-${PV}
 RUN make -j`nproc --all` DESTDIR=`pwd`/../${BIN_PACKAGE} install
-WORKDIR ../${BIN_PACKAGE}
-RUN mkdir -p DEBIAN
-RUN echo "Package: ${BIN_PN}" > DEBIAN/control
-RUN echo "Version: ${PV}-${PR}" >> DEBIAN/control
-RUN echo "Section: base" >> DEBIAN/control
-RUN echo "Priority: optional" >> DEBIAN/control
-RUN echo "Architecture: `dpkg --print-architecture`" >> DEBIAN/control
-#RUN echo "Depends: " >> DEBIAN/control
-RUN echo "Maintainer: Christopher Friedt <chrisfriedt@gmail.com>" >> DEBIAN/control
-RUN echo "Description: CMake" >> DEBIAN/control
-RUN echo " CMake" >> DEBIAN/control
-WORKDIR ..
-RUN dpkg-deb --build ${BIN_PACKAGE}
+RUN sh mkdeb.sh ${BIN_PACKAGE} ${BIN_PN} ${PV} ${PR} "${GH_USER}" ${GH_EMAIL}
