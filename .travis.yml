@@ -1,0 +1,50 @@
+dist: bionic
+sudo: true
+language: cpp
+
+arch:
+  - amd64
+  - arm64
+
+compiler:
+  - gcc
+
+install: skip
+
+env:
+  - PN=cmake PV=3.15.2 PR=1 BIN_PN=cmake BIN_PACKAGE="${BIN_PN}_${PV}-${PR}" PREFIX=usr/local
+
+before_script:
+  - echo 'installing packages from ubuntu..'
+  - sudo apt-get update && sudo apt install -y build-essential git autoconf automake libtool pkg-config libboost-all-dev bison flex curl libglib2.0-dev libssl-dev dh-make bzr-builddeb libevent-dev > /dev/null
+
+script:
+  - curl -L -o ${PN}-${PV}.tar.gz "https://github.com/Kitware/CMake/releases/download/v${PV}/${PN}-${PV}.tar.gz"
+  - echo 'Extracting ${PN}-${PV}.tar.gz..'
+  - tar xpzf ${PN}-${PV}.tar.gz
+  - cd ${PN}-${PV}
+  - echo 'Bootstrapping ${PN}..'
+  - ./bootstrap --parallel=`nproc --all` &> /dev/null
+  - echo 'Building ${PN}..'
+  - make -j`nproc --all` &> /dev/null
+  - echo 'Installing ${PN}..'
+  - make -j`nproc --all` install &> /dev/null
+# How to make a 'basic' .deb
+# See https://ubuntuforums.org/showthread.php?t=910717
+  - echo 'Packaging ${PN}..'
+  - cd ../${PN}-${PV}
+  - make -j`nproc --all` DESTDIR=`pwd`/../${BIN_PACKAGE} install &> /dev/null
+  - cd ../${BIN_PACKAGE}
+  - mkdir -p DEBIAN
+  - echo "Package: ${BIN_PN}" > DEBIAN/control
+  - echo "Version: ${PV}-${PR}" >> DEBIAN/control
+  - echo "Section: base" >> DEBIAN/control
+  - echo "Priority: optional" >> DEBIAN/control
+  - echo "Architecture: `dpkg --print-architecture`" >> DEBIAN/control
+# echo "Depends: " >> DEBIAN/control
+  - echo "Maintainer: Christopher Friedt <chrisfriedt@gmail.com>" >> DEBIAN/control
+  - echo "Description: CMake" >> DEBIAN/control
+  - echo " CMake" >> DEBIAN/control
+  - cd ..
+  - dpkg-deb --build ${BIN_PACKAGE} &> /dev/null
+
