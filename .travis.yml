@@ -1,10 +1,29 @@
 dist: bionic
 sudo: true
-language: cpp
+addons:
+  apt:
+    packages:
+    - build-essential
+    - git
+    - autoconf
+    - automake
+    - libtool
+    - pkg-config
+    - libboost-all-dev
+    - bison
+    - flex
+    - curl
+    - libglib2.0-dev
+    - libssl-dev
+    - dh-make
+    - bzr-builddeb
+    - libevent-dev
 
-arch:
-  - amd64
-  - arm64
+#arch:
+#  - amd64
+#  - arm64
+
+language: cpp
 
 compiler:
   - gcc
@@ -12,11 +31,16 @@ compiler:
 install: skip
 
 env:
-  - PN=cmake PV=3.15.2 PR=1 BIN_PN=cmake BIN_PACKAGE="${BIN_PN}_${PV}-${PR}" PREFIX=usr/local
+  - >
+    PN=cmake
+    PV=3.15.2
+    PR=1
+    BIN_PN=cmake
+    BIN_PACKAGE="${BIN_PN}_${PV}-${PR}"
+    PREFIX=usr/local
 
 before_script:
   - echo 'installing packages from ubuntu..'
-  - sudo apt-get update && sudo apt install -y build-essential git autoconf automake libtool pkg-config libboost-all-dev bison flex curl libglib2.0-dev libssl-dev dh-make bzr-builddeb libevent-dev > /dev/null
 
 script:
   - curl -L -o ${PN}-${PV}.tar.gz "https://github.com/Kitware/CMake/releases/download/v${PV}/${PN}-${PV}.tar.gz"
@@ -46,5 +70,22 @@ script:
   - echo "Description: CMake" >> DEBIAN/control
   - echo " CMake" >> DEBIAN/control
   - cd ..
-  - dpkg-deb --build ${BIN_PACKAGE} &> /dev/null
+  - dpkg-deb --build ${BIN_PACKAGE}
+
+notifications:
+  email: false
+
+before_deploy:
+  - git config --local user.name "$GH_USER"
+  - git config --local user.email "$GH_EMAIL"
+  - export TRAVIS_TAG=${PV}
+  - git tag ${TRAVIS_TAG} || true
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  overwrite: true
+  api_key: "${GH_TOKEN}"
+  file:
+    - "/*.deb"
 
