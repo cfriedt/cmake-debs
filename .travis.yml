@@ -34,7 +34,7 @@ install: skip
 env:
   - >
     PN=cmake
-    PV=3.15.2
+    PV=3.19.3
     PR=1
     BIN_PN=cmake
     BIN_PACKAGE="${BIN_PN}_${PV}-${PR}"

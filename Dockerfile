@@ -1,7 +1,7 @@
 FROM ubuntu:bionic
 
 ENV PN cmake
-ENV PV 3.15.2
+ENV PV 3.19.3
 ENV PR 1
 ENV BIN_PN cmake
 ENV BIN_PACKAGE ${BIN_PN}_${PV}-${PR}
